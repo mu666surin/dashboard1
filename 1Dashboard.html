@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard ข้อมูลสมาชิกสามัญและสมทบ ปีงบประมาณ 2569 - 2570</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --secondary: #3b82f6;
+            --accent: #10b981;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Sarabun', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); padding: 20px; }
+        .container { max-width: 1600px; margin: 0 auto; }
+        header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; padding: 25px 30px; border-radius: 12px; margin-bottom: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        header h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+        header p { font-size: 16px; opacity: 0.9; }
+        .filters { display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+        .search-box { flex: 1; min-width: 280px; position: relative; }
+        .search-box input {
+            width: 100%; padding: 12px 15px 12px 45px; border: 1px solid var(--border-color);
+            border-radius: 8px; font-size: 16px; outline: none; background: white; transition: all 0.3s;
+        }
+        .search-box input:focus { border-color: var(--secondary); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+        .search-box i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 18px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; }
+        .tab-btn {
+            background: white; border: 1px solid var(--border-color); padding: 10px 20px;
+            border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: 500; color: var(--text-color); transition: all 0.2s;
+        }
+        .tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .card { background: var(--card-bg); border-radius: 12px; box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); }
+        .table-responsive { overflow-x: auto; max-height: 600px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th, td { padding: 10px 10px; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+        th { background-color: #f1f5f9; color: #334155; font-weight: 600; position: sticky; top: 0; z-index: 10; text-align: center; }
+        tr:hover { background-color: #f8fafc; }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 12px; font-weight: 500; }
+        .badge-sk { background: #dbeafe; color: #1e40af; }
+        .badge-group { background: #d1fae5; color: #065f46; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .chart-container { position: relative; height: 350px; width: 100%; margin-top: 15px; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .select-box { margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .select-box select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); font-size: 15px; font-family: 'Sarabun', sans-serif; outline: none; background: white; }
+        @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1><i class="fa-solid fa-chart-line"></i> ระบบ Dashboard ข้อมูลสมาชิก (กลุ่มส่งเสริมสหกรณ์ 6)</h1>
+        <p>เปรียบเทียบข้อมูลรายแห่งรายเดือน ปีงบประมาณ 2569 และ 2570 (สหกรณ์และกลุ่มเกษตรกร)</p>
+    </header>
+
+    <div class="filters">
+        <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="searchInput" placeholder="ค้นหาชื่อสถาบันเกษตรกร (เช่น รัตนบุรี, สนม, ดอนแรด)..." onkeyup="filterTables()">
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('tab1', event)"><i class="fa-solid fa-table"></i> 1. สมาชิกสามัญและสมทบ (ปี 69)</button>
+        <button class="tab-btn" onclick="switchTab('tab2', event)"><i class="fa-solid fa-table"></i> 2. สมาชิกสามัญและสมทบ (ปี 70)</button>
+        <button class="tab-btn" onclick="switchTab('tab3', event)"><i class="fa-solid fa-chart-pie"></i> 3. ส่วนร่วมสามัญร้อยละ (%) ปี 69-70</button>
+        <button class="tab-btn" onclick="switchTab('tab4', event)"><i class="fa-solid fa-chart-column"></i> 4. กราฟภาพรวมและกราฟรายแห่ง</button>
+    </div>
+
+    <!-- Tab 1: ปี 69 -->
+    <div id="tab1" class="card tab-content active">
+        <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fa-solid fa-file-invoice"></i> ข้อมูลสมาชิกสามัญและสมทบ รายแห่ง ปีงบประมาณ 2569 (ครบ 14 สถาบัน)</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2">ลำดับ</th><th rowspan="2">สถาบันเกษตรกร</th><th rowspan="2">ประเภท</th><th rowspan="2">ปีบัญชี</th>
+                        <th colspan="3" style="background:#e0f2fe;">ต.ค. 68</th><th colspan="3" style="background:#e0f2fe;">พ.ย. 68</th>
+                        <th colspan="3" style="background:#e0f2fe;">ธ.ค. 68</th><th colspan="3" style="background:#e0f2fe;">ม.ค. 69</th>
+                        <th colspan="3" style="background:#e0f2fe;">ก.พ. 69</th><th colspan="3" style="background:#e0f2fe;">มี.ค. 69</th>
+                        <th colspan="3" style="background:#e0f2fe;">เม.ย. 69</th><th colspan="3" style="background:#e0f2fe;">พ.ค. 69</th>
+                        <th colspan="3" style="background:#e0f2fe;">มิ.ย. 69</th><th colspan="3" style="background:#e0f2fe;">ก.ค. 69</th>
+                        <th colspan="3" style="background:#e0f2fe;">ส.ค. 69</th><th colspan="3" style="background:#e0f2fe;">ก.ย. 69</th>
+                    </tr>
+                    <tr>
+                        <th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td><strong>สกก.รัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>มี.ค.</td><td>1,676</td><td>292</td><td>1,968</td><td>1,672</td><td>294</td><td>1,966</td><td>1,670</td><td>294</td><td>1,964</td><td>1,666</td><td>294</td><td>1,960</td><td>1,666</td><td>294</td><td>1,960</td><td>1,655</td><td>296</td><td>1,951</td><td>1,640</td><td>294</td><td>1,934</td><td>1,633</td><td>294</td><td>1,927</td><td>1,628</td><td>293</td><td>1,921</td><td>1,628</td><td>293</td><td>1,921</td><td>1,626</td><td>292</td><td>1,918</td><td>1,619</td><td>288</td><td>1,907</td></tr>
+                    <tr><td>2</td><td><strong>สกก.สนม จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>มี.ค.</td><td>1,190</td><td>925</td><td>2,115</td><td>1,188</td><td>925</td><td>2,113</td><td>1,186</td><td>923</td><td>2,109</td><td>1,194</td><td>923</td><td>2,117</td><td>1,194</td><td>923</td><td>2,117</td><td>1,197</td><td>923</td><td>2,120</td><td>1,192</td><td>923</td><td>2,115</td><td>1,194</td><td>923</td><td>2,117</td><td>1,191</td><td>922</td><td>2,113</td><td>1,185</td><td>925</td><td>2,110</td><td>1,182</td><td>925</td><td>2,107</td><td>1,176</td><td>922</td><td>2,098</td></tr>
+                    <tr><td>3</td><td><strong>สกก.ดอนแรด จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ม.ค.</td><td>62</td><td>0</td><td>62</td><td>62</td><td>0</td><td>62</td><td>62</td><td>0</td><td>62</td><td>62</td><td>0</td><td>62</td><td>62</td><td>0</td><td>62</td><td>62</td><td>0</td><td>62</td><td>62</td><td>0</td><td>62</td><td>61</td><td>0</td><td>61</td><td>61</td><td>0</td><td>61</td><td>61</td><td>0</td><td>61</td><td>61</td><td>0</td><td>61</td><td>59</td><td>0</td><td>59</td></tr>
+                    <tr><td>4</td><td><strong>สก.โคเนื้อสุรินทร์วากิวยางสว่าง จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ก.ย.</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td></tr>
+                    <tr><td>5</td><td><strong>สก.โคนมรัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>42</td><td>23</td><td>65</td><td>42</td><td>23</td><td>65</td><td>42</td><td>24</td><td>66</td><td>43</td><td>21</td><td>64</td><td>43</td><td>21</td><td>64</td><td>43</td><td>21</td><td>64</td><td>43</td><td>21</td><td>64</td><td>43</td><td>21</td><td>64</td><td>43</td><td>21</td><td>64</td><td>43</td><td>21</td><td>64</td><td>43</td><td>21</td><td>64</td><td>43</td><td>22</td><td>65</td></tr>
+                    <tr><td>6</td><td><strong>สค.โนนนารายณ์ จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td><td>284</td><td>315</td><td>599</td></tr>
+                    <tr><td>7</td><td><strong>สบ.เดินรถรัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td><td>13</td><td>1</td><td>14</td></tr>
+                    <tr><td>8</td><td><strong>ก.ทำนาสนม</strong></td><td><span class="badge badge-group">ก.</span></td><td>มี.ค.</td><td>41</td><td>0</td><td>41</td><td>41</td><td>0</td><td>41</td><td>41</td><td>0</td><td>41</td><td>41</td><td>0</td><td>41</td><td>41</td><td>0</td><td>41</td><td>38</td><td>0</td><td>38</td><td>38</td><td>0</td><td>38</td><td>38</td><td>0</td><td>38</td><td>38</td><td>0</td><td>38</td><td>38</td><td>0</td><td>38</td><td>38</td><td>0</td><td>38</td><td>38</td><td>0</td><td>38</td></tr>
+                    <tr><td>9</td><td><strong>ก.ทำนาหนองอียอ</strong></td><td><span class="badge badge-group">ก.</span></td><td>มี.ค.</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td></tr>
+                    <tr><td>10</td><td><strong>ก.เลี้ยงสัตว์สนม</strong></td><td><span class="badge badge-group">ก.</span></td><td>มิ.ย.</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td><td>43</td><td>0</td><td>43</td></tr>
+                    <tr><td>11</td><td><strong>ก.ชาวสวนยางพาราต.หนองระฆัง</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td><td>70</td><td>0</td><td>70</td></tr>
+                    <tr><td>12</td><td><strong>ก.ชาวสวนยางพาราบ้านนาดี</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>111</td><td>0</td><td>111</td><td>109</td><td>0</td><td>109</td><td>109</td><td>0</td><td>109</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td><td>111</td><td>0</td><td>111</td></tr>
+                    <tr><td>13</td><td><strong>ก.ทำสวนยางพาราต.เบิด</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>112</td><td>0</td><td>112</td><td>112</td><td>0</td><td>112</td><td>112</td><td>0</td><td>112</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>14</td><td><strong>ก.ทำสวนยางพาราต.คำผง</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>150</td><td>0</td><td>150</td><td>150</td><td>0</td><td>150</td><td>150</td><td>0</td><td>150</td><td>150</td><td>0</td><td>150</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 2: ปี 70 -->
+    <div id="tab2" class="card tab-content">
+        <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fa-solid fa-file-invoice"></i> ข้อมูลสมาชิกสามัญและสมทบ รายแห่ง ปีงบประมาณ 2570 (ครบ 14 สถาบัน)</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2">ลำดับ</th><th rowspan="2">สถาบันเกษตรกร</th><th rowspan="2">ประเภท</th><th rowspan="2">ปีบัญชี</th>
+                        <th colspan="3" style="background:#dcfce7;">ต.ค. 69</th><th colspan="3" style="background:#dcfce7;">พ.ย. 69</th><th colspan="3" style="background:#dcfce7;">ธ.ค. 69</th><th colspan="3" style="background:#dcfce7;">ม.ค. 70</th><th colspan="3" style="background:#dcfce7;">ก.พ. 70</th><th colspan="3" style="background:#dcfce7;">มี.ค. 70</th><th colspan="3" style="background:#dcfce7;">เม.ย. 70</th><th colspan="3" style="background:#dcfce7;">พ.ค. 70</th><th colspan="3" style="background:#dcfce7;">มิ.ย. 70</th><th colspan="3" style="background:#dcfce7;">ก.ค. 70</th><th colspan="3" style="background:#dcfce7;">ส.ค. 70</th><th colspan="3" style="background:#dcfce7;">ก.ย. 70</th>
+                    </tr>
+                    <tr>
+                        <th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th><th>สามัญ</th><th>สมทบ</th><th>รวม</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td><strong>สกก.รัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>มี.ค.</td><td>1,672</td><td>294</td><td>1,966</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>2</td><td><strong>สกก.สนม จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>มี.ค.</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>3</td><td><strong>สกก.ดอนแรด จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ม.ค.</td><td>58</td><td>0</td><td>58</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>4</td><td><strong>สก.โคเนื้อสุรินทร์วากิวยางสว่าง จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ก.ย.</td><td>111</td><td>0</td><td>111</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>5</td><td><strong>สก.โคนมรัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>64</td><td>9</td><td>73</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>6</td><td><strong>สค.โนนนารายณ์ จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>601</td><td>0</td><td>601</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>7</td><td><strong>สบ.เดินรถรัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>14</td><td>0</td><td>14</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>8</td><td><strong>ก.ทำนาสนม</strong></td><td><span class="badge badge-group">ก.</span></td><td>มี.ค.</td><td>39</td><td>0</td><td>39</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>9</td><td><strong>ก.ทำนาหนองอียอ</strong></td><td><span class="badge badge-group">ก.</span></td><td>มี.ค.</td><td>33</td><td>0</td><td>33</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>10</td><td><strong>ก.เลี้ยงสัตว์สนม</strong></td><td><span class="badge badge-group">ก.</span></td><td>มิ.ย.</td><td>42</td><td>0</td><td>42</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>11</td><td><strong>ก.ชาวสวนยางพาราต.หนองระฆัง</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>69</td><td>0</td><td>69</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>12</td><td><strong>ก.ชาวสวนยางพาราบ้านนาดี</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>77</td><td>0</td><td>77</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>13</td><td><strong>ก.ทำสวนยางพาราต.เบิด</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>14</td><td><strong>ก.ทำสวนยางพาราต.คำผง</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>155</td><td>0</td><td>155</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 3: ส่วนร่วมร้อยละ (%) -->
+    <div id="tab3" class="card tab-content">
+        <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fa-solid fa-chart-pie"></i> ข้อมูลสมาชิก "สามัญ" ร่วมดำเนินธุรกิจร้อยละ (%) - ปีงบประมาณ 2569 และ 2570 (ครบ 14 สถาบัน)</h3>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ที่</th><th>สถาบัน</th><th>ประเภท</th><th>ปีบัญชี</th><th>สามัญปัจจุบัน</th>
+                        <th>ต.ค.68</th><th>พ.ย.68</th><th>ธ.ค.68</th><th>ม.ค.69</th><th>ก.พ.69</th><th>มี.ค.69</th><th>เม.ย.69</th><th>พ.ค.69</th><th>มิ.ย.69</th><th>ก.ค.69</th><th>ส.ค.69</th><th>ก.ย.69</th>
+                        <th>ต.ค.69</th><th>พ.ย.69</th><th>ธ.ค.69</th><th>ม.ค.70</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td><strong>สกก.รัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>มี.ค.</td><td>1,619</td><td>99.11%</td><td>99.34%</td><td>97.72%</td><td>97.96%</td><td>97.96%</td><td>98.61%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>100%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>2</td><td><strong>สกก.สนม จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>มี.ค.</td><td>1,182</td><td>88.32%</td><td>88.30%</td><td>88.28%</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>3</td><td><strong>สกก.ดอนแรด จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ม.ค.</td><td>59</td><td>88.71%</td><td>88.71%</td><td>88.71%</td><td>88.71%</td><td>88.71%</td><td>88.71%</td><td>88.71%</td><td>88.41%</td><td>88.41%</td><td>88.41%</td><td>88.41%</td><td>88.14%</td><td>88.14%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>4</td><td><strong>สก.โคเนื้อสุรินทร์วากิวยางสว่าง จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ก.ย.</td><td>111</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>5</td><td><strong>สก.โคนมรัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>65</td><td>64.62%</td><td>64.62%</td><td>65.63%</td><td>71.88%</td><td>71.88%</td><td>71.88%</td><td>71.88%</td><td>71.88%</td><td>71.88%</td><td>71.88%</td><td>71.88%</td><td>70.31%</td><td>70.31%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>6</td><td><strong>สค.โนนนารายณ์ จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>599</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>47.42%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>7</td><td><strong>สบ.เดินรถรัตนบุรี จก.</strong></td><td><span class="badge badge-sk">สก.</span></td><td>ธ.ค.</td><td>14</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>92.86%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>8</td><td><strong>ก.ทำนาสนม</strong></td><td><span class="badge badge-group">ก.</span></td><td>มี.ค.</td><td>38</td><td>26.83%</td><td>26.83%</td><td>26.83%</td><td>26.83%</td><td>26.83%</td><td>28.95%</td><td>28.95%</td><td>28.95%</td><td>28.95%</td><td>28.95%</td><td>55.26%</td><td>53.85%</td><td>53.85%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>9</td><td><strong>ก.ทำนาหนองอียอ</strong></td><td><span class="badge badge-group">ก.</span></td><td>มี.ค.</td><td>38</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>51.22%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>10</td><td><strong>ก.เลี้ยงสัตว์สนม</strong></td><td><span class="badge badge-group">ก.</span></td><td>มิ.ย.</td><td>38</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>11</td><td><strong>ก.ชาวสวนยางพาราต.หนองระฆัง</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>63</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>12</td><td><strong>ก.ชาวสวนยางพาราบ้านนาดี</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>111</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>100.00%</td><td>69.37%</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>13</td><td><strong>ก.ทำสวนยางพาราต.เบิด</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>112</td><td>89.29%</td><td>89.29%</td><td>75.89%</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>14</td><td><strong>ก.ทำสวนยางพาราต.คำผง</strong></td><td><span class="badge badge-group">ก.</span></td><td>เม.ย.</td><td>150</td><td>76.67%</td><td>75.33%</td><td>78.67%</td><td>71.33%</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>103.33%</td><td>-</td><td>-</td><td>-</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 4: กราฟภาพรวมและกราฟรายแห่ง -->
+    <div id="tab4" class="card tab-content">
+        <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fa-solid fa-chart-column"></i> กราฟแสดงสถิติภาพรวมและรายแห่ง</h3>
+        
+        <!-- กราฟภาพรวมกลุ่ม -->
+        <div class="grid-2" style="margin-bottom: 30px;">
+            <div class="card" style="margin-bottom: 0;">
+                <h4 style="text-align: center; color: #475569; font-size: 15px;">แนวโน้มยอดรวมสมาชิกกลุ่ม (สามัญ + สมทบ) ปี 69</h4>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            <div class="card" style="margin-bottom: 0;">
+                <h4 style="text-align: center; color: #475569; font-size: 15px;">ค่าเฉลี่ยร้อยละ (%) การร่วมดำเนินธุรกิจรายเดือน (ปี 69)</h4>
+                <div class="chart-container">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 30px 0;">
+
+        <!-- กราฟสมาชิกรายแห่ง (สามัญ + สมทบ) -->
+        <div class="card" style="background: #f8fafc; margin-bottom: 30px;">
+            <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fa-solid fa-chart-line"></i> กราฟแสดงจำนวนสมาชิกรายแห่ง (สามัญ & สมทบ)</h3>
+            <div class="select-box">
+                <label for="institutionSelect" style="font-weight: 600;">เลือกสถาบันเกษตรกร:</label>
+                <select id="institutionSelect" onchange="updateInstitutionChart()">
+                    <option value="0">1. สกก.รัตนบุรี จก.</option>
+                    <option value="1">2. สกก.สนม จก.</option>
+                    <option value="2">3. สกก.ดอนแรด จก.</option>
+                    <option value="3">4. สก.โคเนื้อสุรินทร์วากิวยางสว่าง จก.</option>
+                    <option value="4">5. สก.โคนมรัตนบุรี จก.</option>
+                    <option value="5">6. สค.โนนนารายณ์ จก.</option>
+                    <option value="6">7. สบ.เดินรถรัตนบุรี จก.</option>
+                    <option value="7">8. ก.ทำนาสนม</option>
+                    <option value="8">9. ก.ทำนาหนองอียอ</option>
+                    <option value="9">10. ก.เลี้ยงสัตว์สนม</option>
+                    <option value="10">11. ก.ชาวสวนยางพาราต.หนองระฆัง</option>
+                    <option value="11">12. ก.ชาวสวนยางพาราบ้านนาดี</option>
+                    <option value="12">13. ก.ทำสวนยางพาราต.เบิด</option>
+                    <option value="13">14. ก.ทำสวนยางพาราต.คำผง</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="institutionChart"></canvas>
+            </div>
+        </div>
+
+        <!-- กราฟส่วนร่วมร้อยละ (%) รายแห่ง -->
+        <div class="card" style="background: #f8fafc; margin-bottom: 0;">
+            <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fa-solid fa-chart-area"></i> กราฟแสดงส่วนร่วมสามัญร้อยละ (%) รายแห่ง</h3>
+            <div class="select-box">
+                <label for="percentSelect" style="font-weight: 600;">เลือกสถาบันเกษตรกร:</label>
+                <select id="percentSelect" onchange="updatePercentChart()">
+                    <option value="0">1. สกก.รัตนบุรี จก.</option>
+                    <option value="1">2. สกก.สนม จก.</option>
+                    <option value="2">3. สกก.ดอนแรด จก.</option>
+                    <option value="3">4. สก.โคเนื้อสุรินทร์วากิวยางสว่าง จก.</option>
+                    <option value="4">5. สก.โคนมรัตนบุรี จก.</option>
+                    <option value="5">6. สค.โนนนารายณ์ จก.</option>
+                    <option value="6">7. สบ.เดินรถรัตนบุรี จก.</option>
+                    <option value="7">8. ก.ทำนาสนม</option>
+                    <option value="8">9. ก.ทำนาหนองอียอ</option>
+                    <option value="9">10. ก.เลี้ยงสัตว์สนม</option>
+                    <option value="10">11. ก.ชาวสวนยางพาราต.หนองระฆัง</option>
+                    <option value="11">12. ก.ชาวสวนยางพาราบ้านนาดี</option>
+                    <option value="12">13. ก.ทำสวนยางพาราต.เบิด</option>
+                    <option value="13">14. ก.ทำสวนยางพาราต.คำผง</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <canvas id="percentChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabId, event) {
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        if(tabId === 'tab4') { initCharts(); }
+    }
+
+    function filterTables() {
+        let filter = document.getElementById("searchInput").value.toLowerCase();
+        let activeTab = document.querySelector('.tab-content.active');
+        let trs = activeTab.getElementsByTagName("tr");
+        for (let i = 1; i < trs.length; i++) {
+            let td = trs[i].getElementsByTagName("td")[1];
+            if (td) {
+                let txt = td.textContent || td.innerText;
+                trs[i].style.display = txt.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+            }
+        }
+    }
+
+    let chartsInitialized = false;
+    let instChart = null;
+    let percentChart = null;
+
+    const instData = [
+        { name: "สกก.รัตนบุรี จก.", samun: [1676,1672,1670,1666,1666,1655,1640,1633,1628,1628,1626,1619], somtob: [292,294,294,294,294,296,294,294,293,293,292,288] },
+        { name: "สกก.สนม จก.", samun: [1190,1188,1186,1194,1194,1197,1192,1194,1191,1185,1182,1176], somtob: [925,925,923,923,923,923,923,923,922,925,925,922] },
+        { name: "สกก.ดอนแรด จก.", samun: [62,62,62,62,62,62,62,62,61,61,61,59], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "สก.โคเนื้อสุรินทร์วากิวยางสว่าง จก.", samun: [111,111,111,111,111,111,111,111,111,111,111,111], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "สก.โคนมรัตนบุรี จก.", samun: [42,42,42,43,43,43,43,43,43,43,43,43], somtob: [23,23,24,21,21,21,21,21,21,21,21,22] },
+        { name: "สค.โนนนารายณ์ จก.", samun: [284,284,284,284,284,284,284,284,284,284,284,284], somtob: [315,315,315,315,315,315,315,315,315,315,315,315] },
+        { name: "สบ.เดินรถรัตนบุรี จก.", samun: [13,13,13,13,13,13,13,13,13,13,13,13], somtob: [1,1,1,1,1,1,1,1,1,1,1,1] },
+        { name: "ก.ทำนาสนม", samun: [41,41,41,41,41,38,38,38,38,38,38,38], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "ก.ทำนาหนองอียอ", samun: [43,43,43,43,43,43,43,43,43,43,43,43], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "ก.เลี้ยงสัตว์สนม", samun: [43,43,43,43,43,43,43,43,43,43,43,43], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "ก.ชาวสวนยางพาราต.หนองระฆัง", samun: [70,70,70,70,70,70,70,70,70,70,70,70], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "ก.ชาวสวนยางพาราบ้านนาดี", samun: [111,109,109,111,111,111,111,111,111,111,111,111], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "ก.ทำสวนยางพาราต.เบิด", samun: [112,112,112,0,0,0,0,0,0,0,0,0], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] },
+        { name: "ก.ทำสวนยางพาราต.คำผง", samun: [150,150,150,150,0,0,0,0,0,0,0,0], somtob: [0,0,0,0,0,0,0,0,0,0,0,0] }
+    ];
+
+    const percentData = [
+        { name: "สกก.รัตนบุรี จก.", pct: [99.11, 99.34, 97.72, 97.96, 97.96, 98.61, 100, 100, 100, 100, 100, 100] },
+        { name: "สกก.สนม จก.", pct: [88.32, 88.30, 88.28, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+        { name: "สกก.ดอนแรด จก.", pct: [88.71, 88.71, 88.71, 88.71, 88.71, 88.71, 88.71, 88.41, 88.41, 88.41, 88.41, 88.14] },
+        { name: "สก.โคเนื้อสุรินทร์วากิวยางสว่าง จก.", pct: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100] },
+        { name: "สก.โคนมรัตนบุรี จก.", pct: [64.62, 64.62, 65.63, 71.88, 71.88, 71.88, 71.88, 71.88, 71.88, 71.88, 71.88, 70.31] },
+        { name: "สค.โนนนารายณ์ จก.", pct: [47.42, 47.42, 47.42, 47.42, 47.42, 47.42, 47.42, 47.42, 47.42, 47.42, 47.42, 47.42] },
+        { name: "สบ.เดินรถรัตนบุรี จก.", pct: [92.86, 92.86, 92.86, 92.86, 92.86, 92.86, 92.86, 92.86, 92.86, 92.86, 92.86, 92.86] },
+        { name: "ก.ทำนาสนม", pct: [26.83, 26.83, 26.83, 26.83, 26.83, 28.95, 28.95, 28.95, 28.95, 28.95, 55.26, 53.85] },
+        { name: "ก.ทำนาหนองอียอ", pct: [51.22, 51.22, 51.22, 51.22, 51.22, 51.22, 51.22, 51.22, 51.22, 51.22, 51.22, 51.22] },
+        { name: "ก.เลี้ยงสัตว์สนม", pct: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100] },
+        { name: "ก.ชาวสวนยางพาราต.หนองระฆัง", pct: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100] },
+        { name: "ก.ชาวสวนยางพาราบ้านนาดี", pct: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100] },
+        { name: "ก.ทำสวนยางพาราต.เบิด", pct: [89.29, 89.29, 75.89, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+        { name: "ก.ทำสวนยางพาราต.คำผง", pct: [76.67, 75.33, 78.67, 71.33, 0, 0, 0, 0, 0, 0, 0, 0] }
+    ];
+
+    function initCharts() {
+        if (chartsInitialized) return;
+        chartsInitialized = true;
+
+        const ctxBar = document.getElementById('barChart').getContext('2d');
+        new Chart(ctxBar, {
+            type: 'bar',
+            data: {
+                labels: ['ต.ค.68', 'พ.ย.68', 'ธ.ค.68', 'ม.ค.69', 'ก.พ.69', 'มี.ค.69', 'เม.ย.69', 'พ.ค.69', 'มิ.ย.69', 'ก.ค.69', 'ส.ค.69', 'ก.ย.69'],
+                datasets: [{
+                    label: 'ยอดรวมสมาชิก (คน)',
+                    data: [5203, 5201, 5195, 5199, 5199, 5187, 5169, 5162, 5155, 5148, 5145, 5131],
+                    backgroundColor: '#3b82f6',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+        });
+
+        const ctxLine = document.getElementById('lineChart').getContext('2d');
+        new Chart(ctxLine, {
+            type: 'line',
+            data: {
+                labels: ['ต.ค.68', 'พ.ย.68', 'ธ.ค.68', 'ม.ค.69', 'ก.พ.69', 'มี.ค.69', 'เม.ย.69', 'พ.ค.69', 'มิ.ย.69', 'ก.ค.69', 'ส.ค.69', 'ก.ย.69'],
+                datasets: [{
+                    label: 'ค่าเฉลี่ยร้อยละ (%)',
+                    data: [82.5, 82.5, 82.6, 83.0, 83.0, 83.2, 83.5, 83.5, 83.5, 83.5, 85.0, 84.8],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        updateInstitutionChart();
+        updatePercentChart();
+    }
+
+    function updateInstitutionChart() {
+        const select = document.getElementById('institutionSelect');
+        const idx = parseInt(select.value);
+        const data = instData[idx];
+
+        const ctxInst = document.getElementById('institutionChart').getContext('2d');
+        if (instChart) { instChart.destroy(); }
+
+        instChart = new Chart(ctxInst, {
+            type: 'bar',
+            data: {
+                labels: ['ต.ค.68', 'พ.ย.68', 'ธ.ค.68', 'ม.ค.69', 'ก.พ.69', 'มี.ค.69', 'เม.ย.69', 'พ.ค.69', 'มิ.ย.69', 'ก.ค.69', 'ส.ค.69', 'ก.ย.69'],
+                datasets: [
+                    { label: 'สมาชิกสามัญ (คน)', data: data.samun, backgroundColor: '#3b82f6', borderRadius: 4 },
+                    { label: 'สมาชิกสมทบ (คน)', data: data.somtob, backgroundColor: '#10b981', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { title: { display: true, text: 'สมาชิกรายเดือนของ: ' + data.name, font: { size: 15, family: 'Sarabun' } } },
+                scales: { x: { stacked: true }, y: { stacked: true } }
+            }
+        });
+    }
+
+    function updatePercentChart() {
+        const select = document.getElementById('percentSelect');
+        const idx = parseInt(select.value);
+        const data = percentData[idx];
+
+        const ctxPct = document.getElementById('percentChart').getContext('2d');
+        if (percentChart) { percentChart.destroy(); }
+
+        percentChart = new Chart(ctxPct, {
+            type: 'line',
+            data: {
+                labels: ['ต.ค.68', 'พ.ย.68', 'ธ.ค.68', 'ม.ค.69', 'ก.พ.69', 'มี.ค.69', 'เม.ย.69', 'พ.ค.69', 'มิ.ย.69', 'ก.ค.69', 'ส.ค.69', 'ก.ย.69'],
+                datasets: [{
+                    label: 'ร้อยละ (%) การร่วมดำเนินธุรกิจ',
+                    data: data.pct,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { title: { display: true, text: 'ร้อยละส่วนร่วมรายเดือนของ: ' + data.name, font: { size: 15, family: 'Sarabun' } } },
+                scales: { y: { beginAtZero: true, max: 105 } }
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
